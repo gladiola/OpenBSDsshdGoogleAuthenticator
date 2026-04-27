@@ -1,0 +1,64 @@
+# /etc/ssh/sshd_config — OpenBSD snippet for Google Authenticator (TOTP)
+#
+# Add these lines to /etc/ssh/sshd_config (or replace the defaults shown).
+# setup.sh applies these changes automatically.
+#
+# Requires OpenBSD 7.x and oath-toolkit (pkg_add oath-toolkit).
+# -----------------------------------------------------------------------
+
+# -----------------------------------------------------------------------
+# Network
+# -----------------------------------------------------------------------
+
+# Listen on the default SSH port.  Change if desired.
+Port 22
+
+# Only listen on IPv4 and IPv6 loopback / all interfaces (adjust as needed).
+#ListenAddress 0.0.0.0
+#ListenAddress ::
+
+# -----------------------------------------------------------------------
+# Authentication: public key + TOTP (two-factor)
+# -----------------------------------------------------------------------
+
+# Allow only public-key auth, followed by keyboard-interactive TOTP.
+# The user must satisfy BOTH factors.
+AuthenticationMethods publickey,keyboard-interactive:bsdauth
+
+# Enable keyboard-interactive (BSD Auth challenge-response) for TOTP.
+KbdInteractiveAuthentication yes
+
+# Disable plain password authentication — TOTP replaces it.
+PasswordAuthentication no
+
+# OpenBSD does not use PAM; ensure it stays disabled.
+UsePAM no
+
+# Permit root login via public key only (TOTP still required by
+# AuthenticationMethods above).  Use "no" to disallow root logins entirely.
+PermitRootLogin prohibit-password
+
+# -----------------------------------------------------------------------
+# Logging — sshd writes to the auth facility by default on OpenBSD.
+# Failed login attempts appear as auth.info / auth.warning messages and
+# are forwarded to the remote syslog server via /etc/syslog.conf.
+# -----------------------------------------------------------------------
+
+# Increase verbosity to capture all auth failure details.
+LogLevel VERBOSE
+
+# -----------------------------------------------------------------------
+# Hardening (optional but recommended)
+# -----------------------------------------------------------------------
+
+# Disconnect after 2 failed auth attempts (covers the TOTP factor).
+MaxAuthTries 2
+
+# Disconnect unauthenticated sessions after 60 seconds.
+LoginGraceTime 60
+
+# Disable features not needed for an SSH-only server.
+X11Forwarding no
+AllowTcpForwarding no
+AllowAgentForwarding no
+PermitTunnel no

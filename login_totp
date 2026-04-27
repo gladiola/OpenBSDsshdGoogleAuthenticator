@@ -1,0 +1,138 @@
+#!/bin/sh
+#
+# login_totp - BSD Auth login script for TOTP (Google Authenticator) on OpenBSD
+#
+# Place this file at: /usr/local/libexec/auth/login_totp
+# Make it executable: chmod 500 /usr/local/libexec/auth/login_totp
+# Own it:             chown root:auth /usr/local/libexec/auth/login_totp
+#
+# BSD Auth protocol:
+#   The script communicates with the OpenBSD auth framework via fd 3.
+#   Messages are sequences of null-terminated strings, terminated by
+#   an extra null byte (empty string sentinel).
+#
+#   To issue a challenge (prompt the user):
+#       printf '%s\0%s\0\0' "challenge" "<prompt text>" >&3
+#   Then read the user's response:
+#       IFS= read -r -d '' response <&3
+#   To accept the authentication:
+#       printf '%s\0\0' "authorize" >&3
+#   To reject the authentication:
+#       printf '%s\0\0' "reject" >&3
+#
+# Arguments (set by the OpenBSD auth framework):
+#   $1 - login name
+#   $2 - login class
+#   $3 - service (e.g. ssh, login)
+#   $4 - style (e.g. totp)
+#   $5 - "lastchance" flag (set to "lastchance" when this is the final attempt)
+
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+
+readonly SYSLOG_TAG="login_totp"
+readonly SECRET_FILE=".google_authenticator"
+# Number of 30-second time steps on either side of the current window to
+# accept.  A value of 1 allows codes up to 30 seconds early or late.
+readonly TOTP_WINDOW=1
+
+# ---------------------------------------------------------------------------
+# Helper: emit a syslog message and reject the session
+# ---------------------------------------------------------------------------
+fail() {
+    logger -t "$SYSLOG_TAG" -p auth.warning "$1"
+    printf '%s\0\0' "reject" >&3
+    exit 1
+}
+
+# ---------------------------------------------------------------------------
+# Collect parameters
+# ---------------------------------------------------------------------------
+login_name="$1"
+login_class="$2"
+service="$3"
+style="$4"
+
+# ---------------------------------------------------------------------------
+# Validate that oathtool is available
+# ---------------------------------------------------------------------------
+if ! command -v oathtool >/dev/null 2>&1; then
+    logger -t "$SYSLOG_TAG" -p auth.err \
+        "oathtool not found; install security/oath-toolkit from ports"
+    printf '%s\0\0' "reject" >&3
+    exit 1
+fi
+
+# ---------------------------------------------------------------------------
+# Locate the user's Google Authenticator secret file
+# ---------------------------------------------------------------------------
+home_dir=$(getent passwd "$login_name" 2>/dev/null | cut -d: -f6)
+if [ -z "$home_dir" ]; then
+    fail "TOTP reject: unknown user '$login_name' (service=$service)"
+fi
+
+secret_path="$home_dir/$SECRET_FILE"
+
+if [ ! -f "$secret_path" ]; then
+    fail "TOTP reject: no secret file for user '$login_name' (service=$service)"
+fi
+
+if [ ! -r "$secret_path" ]; then
+    fail "TOTP reject: secret file not readable for user '$login_name' (service=$service)"
+fi
+
+# The first line of ~/.google_authenticator is the base-32 secret key.
+secret=$(head -1 "$secret_path")
+if [ -z "$secret" ]; then
+    fail "TOTP reject: empty secret for user '$login_name' (service=$service)"
+fi
+
+# ---------------------------------------------------------------------------
+# Issue challenge and collect the user's one-time code
+# ---------------------------------------------------------------------------
+printf '%s\0%s\0\0' "challenge" "Google Authenticator code: " >&3
+
+# Read the user's response (null-terminated by the BSD Auth framework).
+IFS= read -r -d '' totp_response <&3
+
+# Strip any trailing whitespace / carriage returns that some clients may add.
+totp_response=$(printf '%s' "$totp_response" | tr -d '[:space:]')
+
+if [ -z "$totp_response" ]; then
+    fail "TOTP reject: empty response from user '$login_name' (service=$service)"
+fi
+
+# Reject obviously malformed codes before touching oathtool.
+# Google Authenticator produces exactly 6 decimal digits.
+case "$totp_response" in
+    [0-9][0-9][0-9][0-9][0-9][0-9]) ;;
+    *)
+        fail "TOTP reject: invalid code format for user '$login_name' (service=$service)"
+        ;;
+esac
+
+# ---------------------------------------------------------------------------
+# Verify the TOTP code
+# ---------------------------------------------------------------------------
+# oathtool --totp: TOTP mode
+# -b / --base32: secret is base-32 encoded (Google Authenticator default)
+# -w $TOTP_WINDOW: accept codes within ±TOTP_WINDOW 30-second time steps
+#
+# When a second positional argument is supplied, oathtool exits 0 if the
+# code matches and non-zero otherwise — no pipe or extra flags needed.
+if oathtool --totp -b -w "$TOTP_WINDOW" \
+        "$secret" "$totp_response" >/dev/null 2>&1; then
+    logger -t "$SYSLOG_TAG" -p auth.info \
+        "TOTP accept: user '$login_name' authenticated (service=$service)"
+    printf '%s\0\0' "authorize" >&3
+    exit 0
+fi
+
+# ---------------------------------------------------------------------------
+# Authentication failed — log a detailed warning and reject
+# ---------------------------------------------------------------------------
+logger -t "$SYSLOG_TAG" -p auth.warning \
+    "TOTP reject: failed one-time-password for user '$login_name' (service=$service class=$login_class)"
+printf '%s\0\0' "reject" >&3
+exit 1
