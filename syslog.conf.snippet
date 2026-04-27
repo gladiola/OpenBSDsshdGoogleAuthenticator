@@ -1,0 +1,43 @@
+# /etc/syslog.conf — OpenBSD snippet for remote syslog forwarding
+#
+# Add these lines to /etc/syslog.conf.
+# setup.sh applies these changes automatically.
+#
+# Replace REMOTE_SYSLOG_SERVER with the IP address or hostname of your
+# central syslog server (e.g., 192.168.1.50 or syslog.example.com).
+#
+# See syslog.conf(5) and syslogd(8) for full documentation.
+# -----------------------------------------------------------------------
+
+# -----------------------------------------------------------------------
+# Forwarding selector syntax
+# -----------------------------------------------------------------------
+# UDP (default):     @hostname   or   @ip-address
+# TCP (reliable):    @@hostname  or   @@ip-address
+#
+# To use TCP, also add the following to /etc/rc.conf.local and restart
+# syslogd so it listens for TCP connections (port 514):
+#
+#   syslogd_flags="-T"
+#
+# -----------------------------------------------------------------------
+
+# Forward all authentication messages (SSH login success/failure, sudo,
+# su, login_totp TOTP failures) to the remote server.
+auth.info                               @REMOTE_SYSLOG_SERVER
+
+# Forward all warning-and-above messages from every facility so that
+# the remote server has context for security investigations.
+*.warning                               @REMOTE_SYSLOG_SERVER
+
+# -----------------------------------------------------------------------
+# Optional: also keep a local copy for quick on-box review.
+# -----------------------------------------------------------------------
+# auth.info                             /var/log/authlog
+# auth.warning                          /var/log/authlog
+
+# -----------------------------------------------------------------------
+# TCP alternative (uncomment and remove the UDP lines above):
+# -----------------------------------------------------------------------
+# auth.info                             @@REMOTE_SYSLOG_SERVER
+# *.warning                             @@REMOTE_SYSLOG_SERVER
