@@ -288,4 +288,4 @@ The backup created by `setup.sh` is at
 
 ## License
 
-MIT
+BSD 2-Clause License. See [LICENSE](LICENSE) for details.
