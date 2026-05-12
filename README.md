@@ -3,6 +3,50 @@
 Two-factor authentication for OpenBSD SSH using Google Authenticator
 (TOTP), with failed-login logging forwarded to a remote syslog server.
 
+## Available Languages
+
+This guide is also available in the following languages:
+
+| Language | File |
+|----------|------|
+| Afrikaans | [docs/README.af.md](docs/README.af.md) |
+| Amharic | [docs/README.am.md](docs/README.am.md) |
+| Arabic | [docs/README.ar.md](docs/README.ar.md) |
+| Bengali | [docs/README.bn.md](docs/README.bn.md) |
+| German | [docs/README.de.md](docs/README.de.md) |
+| Greek | [docs/README.el.md](docs/README.el.md) |
+| Spanish | [docs/README.es.md](docs/README.es.md) |
+| Estonian | [docs/README.et.md](docs/README.et.md) |
+| Finnish | [docs/README.fi.md](docs/README.fi.md) |
+| French | [docs/README.fr.md](docs/README.fr.md) |
+| Irish | [docs/README.ga.md](docs/README.ga.md) |
+| Hausa | [docs/README.ha.md](docs/README.ha.md) |
+| Hawaiian | [docs/README.haw.md](docs/README.haw.md) |
+| Hebrew | [docs/README.he.md](docs/README.he.md) |
+| Hindi | [docs/README.hi.md](docs/README.hi.md) |
+| Haitian Creole | [docs/README.ht.md](docs/README.ht.md) |
+| Indonesian | [docs/README.id.md](docs/README.id.md) |
+| Italian | [docs/README.it.md](docs/README.it.md) |
+| Japanese | [docs/README.ja.md](docs/README.ja.md) |
+| Javanese | [docs/README.jv.md](docs/README.jv.md) |
+| Korean | [docs/README.ko.md](docs/README.ko.md) |
+| Latin | [docs/README.la.md](docs/README.la.md) |
+| Māori | [docs/README.mi.md](docs/README.mi.md) |
+| Malay | [docs/README.ms.md](docs/README.ms.md) |
+| Dutch | [docs/README.nl.md](docs/README.nl.md) |
+| Norwegian | [docs/README.no.md](docs/README.no.md) |
+| Portuguese | [docs/README.pt.md](docs/README.pt.md) |
+| Russian | [docs/README.ru.md](docs/README.ru.md) |
+| Samoan | [docs/README.sm.md](docs/README.sm.md) |
+| Swedish | [docs/README.sv.md](docs/README.sv.md) |
+| Swahili | [docs/README.sw.md](docs/README.sw.md) |
+| Thai | [docs/README.th.md](docs/README.th.md) |
+| Tagalog | [docs/README.tl.md](docs/README.tl.md) |
+| Ukrainian | [docs/README.uk.md](docs/README.uk.md) |
+| Yoruba | [docs/README.yo.md](docs/README.yo.md) |
+| Chinese (Simplified) | [docs/README.zh-CN.md](docs/README.zh-CN.md) |
+| Chinese (Hong Kong) | [docs/README.zh-HK.md](docs/README.zh-HK.md) |
+
 ## Overview
 
 This repository provides:
